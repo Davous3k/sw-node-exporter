@@ -1,4 +1,4 @@
-Ansible role for deploy node-exporter packages and services. You can add custom services or packages via variables bellow.
+Ansible role for deploy node-exporter packages and services. You can add custom ports via variables bellow.
 
 This role is developed with Ansible 2.9.6 and tested on Ubuntu 20.04 LTS.
 
@@ -18,13 +18,13 @@ To install it, use the following command:
 ansible-galaxy collection install ansible.posix
 ```
 
-## Install basic packages and services with default settings
+## Run node-exporter role with default settings
 ```yaml
   roles:
      - sw-node-exporter
 ```
 
-## Install basic packages and services with some custom variables
+## Run node-exporter role with custom variables
 ```yaml
   roles:
      - sw-node-exporter
