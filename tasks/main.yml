@@ -1,17 +1,17 @@
-- name: sw-node-exporter | PRE - 1. Install req packages
-  ansible.builtin.apt:
-    name:
-    - firewalld
-    state: present
-    update_cache: yes
-
-- name: sw-node-exporter | PRE - 2. Stop, disable and mask ufw service
+- name: sw-node-exporter | PRE - 1. Stop, disable and mask ufw service
   ansible.builtin.systemd:
     state: stopped
     name: ufw
     enabled: no
     masked: yes
     daemon_reload: yes
+
+- name: sw-node-exporter | PRE - 2. Install firewalld
+  ansible.builtin.apt:
+    name:
+    - firewalld
+    state: present
+    update_cache: yes
 
 - name: sw-node-exporter | PRE - 3. Start and enable firewalld service
   ansible.builtin.systemd:
@@ -20,16 +20,25 @@
     enabled: yes
     daemon_reload: yes
 
-- name: sw-node-exporter | PRE - 4. Allow traffic in default zone on port 9100/tcp
+- name: sw-node-exporter | PRE - 4. Allow ports in firewalld
   ansible.posix.firewalld:
-    port: 9100/tcp
+    port: "{{ item }}"
     permanent: yes
     state: enabled
+  notify: firewalld reload
+  loop:
+    - 9100/tcp
+    - 22/tcp
 
-- name: sw-node-exporter | PRE - 5. Reload firewalld service
-  ansible.builtin.systemd:
-    state: restarted
-    name: firewalld
+# Muze byt pridano vice portu pomoci variablu, tedy alespon myslim, ale abych si nic nero*esral, tak je to takto.
+#- name: sw-node-exporter | PRE - 4. Allow ports in firewalld
+#  ansible.posix.firewalld:
+#    port: "{{ item }}"
+#    permanent: yes
+#    state: enabled
+#  notify: reload firewalld
+#  with_items: "{{ additional_ports }}"
+#  when: additional_ports is defined
 
 - name: sw-node-exporter | 1. Download and Unarchive node-exporter in /usr/local/bin
   ansible.builtin.unarchive:

@@ -2,3 +2,7 @@
 - name: daemon reload
   ansible.builtin.systemd:
     daemon_reload: yes
+- name: firewalld reload
+  ansible.builtin.systemd:
+    state: restarted
+    name: firewalld
