@@ -9,5 +9,8 @@ Group=node_exporter
 Type=simple
 ExecStart=/usr/local/bin/node_exporter
 
+# jeste bych tady dal restart on failure
+# https://www.redhat.com/sysadmin/systemd-automate-recovery
+
 [Install]
 WantedBy=multi-user.target
