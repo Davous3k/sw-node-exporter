@@ -5,6 +5,8 @@
     state: present
     update_cache: yes
 
+# Nejdriv bych zacal vypnutim stavajici service
+
 - name: sw-node-exporter | PRE - 2. Stop, disable and mask ufw service
   ansible.builtin.systemd:
     state: stopped
@@ -20,11 +22,16 @@
     enabled: yes
     daemon_reload: yes
 
+# Tady uz musis mit nejaky default set rules, at si neodrezes ssh
+
 - name: sw-node-exporter | PRE - 4. Allow traffic in default zone on port 9100/tcp
   ansible.posix.firewalld:
     port: 9100/tcp
     permanent: yes
     state: enabled
+
+#restart resis handlerem, tedy k tasku allow traffic napis notify: restart firewalld
+# handler https://docs.ansible.com/ansible/latest/user_guide/playbooks_handlers.html
 
 - name: sw-node-exporter | PRE - 5. Reload firewalld service
   ansible.builtin.systemd:
