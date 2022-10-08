@@ -20,7 +20,7 @@
     enabled: yes
     daemon_reload: yes
 
-- name: sw-node-exporter | PRE - 4. Allow ports in firewalld
+- name: sw-node-exporter | PRE - 4. Allow SPOLECNY ports in firewalld
   ansible.posix.firewalld:
     port: "{{ item }}"
     permanent: yes
@@ -30,15 +30,14 @@
     - 9100/tcp
     - 22/tcp
 
-# Muze byt pridano vice portu pomoci variablu, tedy alespon myslim, ale abych si nic nero*esral, tak je to takto.
-#- name: sw-node-exporter | PRE - 4. Allow ports in firewalld
-#  ansible.posix.firewalld:
-#    port: "{{ item }}"
-#    permanent: yes
-#    state: enabled
-#  notify: reload firewalld
-#  with_items: "{{ additional_ports }}"
-#  when: additional_ports is defined
+- name: sw-node-exporter | PRE - 4. Allow additional ports in firewalld
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    state: enabled
+  notify: reload firewalld
+  with_items: "{{ additional_ports }}"
+  when: additional_ports is defined
 
 - name: sw-node-exporter | 1. Download and Unarchive node-exporter in /usr/local/bin
   ansible.builtin.unarchive:
