@@ -1,0 +1,77 @@
+- name: sw-node-exporter | PRE - 1. Install req packages
+  ansible.builtin.apt:
+    name:
+    - firewalld
+    state: present
+    update_cache: yes
+
+- name: sw-node-exporter | PRE - 2. Stop, disable and mask ufw service
+  ansible.builtin.systemd:
+    state: stopped
+    name: ufw
+    enabled: no
+    masked: yes
+    daemon_reload: yes
+
+- name: sw-node-exporter | PRE - 3. Start and enable firewalld service
+  ansible.builtin.systemd:
+    state: started
+    name: firewalld
+    enabled: yes
+    daemon_reload: yes
+
+- name: sw-node-exporter | PRE - 4. Allow traffic in default zone on port 9100/tcp
+  ansible.posix.firewalld:
+    port: 9100/tcp
+    permanent: yes
+    state: enabled
+
+- name: sw-node-exporter | PRE - 5. Reload firewalld service
+  ansible.builtin.systemd:
+    state: restarted
+    name: firewalld
+
+- name: sw-node-exporter | 1. Download and Unarchive node-exporter in /usr/local/bin
+  ansible.builtin.unarchive:
+    src: https://github.com/prometheus/node_exporter/releases/download/v1.4.0/node_exporter-1.4.0.linux-amd64.tar.gz
+    dest: /usr/local/bin
+    remote_src: yes
+
+- name: sw-node-exporter | 2. Create node_exporter group
+  ansible.builtin.group:
+    name: node_exporter
+    state: present
+
+- name: sw-node-exporter | 3. Add the user and group 'node_exporter' with no home and shell
+  ansible.builtin.user:
+    name: node_exporter
+    group: node_exporter
+    create_home: no
+    shell: /bin/false
+
+- name: sw-node-exporter | 4. Move node_exporter to /usr/local/bin
+  ansible.builtin.copy:
+    src: /usr/local/bin/node_exporter-1.4.0.linux-amd64/node_exporter
+    dest: /usr/local/bin
+    owner: node_exporter
+    group: node_exporter
+    mode: '0777'
+    remote_src: yes
+
+- name: sw-node-exporter | 5. Recursively remove node_exporter directory
+  ansible.builtin.file:
+    path: /usr/local/bin/node_exporter-1.4.0.linux-amd64
+    state: absent
+
+- name: sw-node-exporter | 6. Deploy node_exporter.service
+  ansible.builtin.copy:
+    src: node_exporter.service
+    dest: /etc/systemd/system
+  notify:
+    - daemon reload
+
+- name: sw-node-exporter | 7. Start and enable node-exporter service
+  ansible.builtin.service:
+    name: node_exporter
+    state: started
+    enabled: yes
