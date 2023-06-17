@@ -1,4 +1,4 @@
-- name: sw-node-exporter | PRE - 1. Stop, disable and mask ufw service
+- name: sw-node-exporter | 1. Stop, disable and mask ufw service
   ansible.builtin.systemd:
     state: stopped
     name: ufw
@@ -6,79 +6,76 @@
     masked: yes
     daemon_reload: yes
 
-- name: sw-node-exporter | PRE - 2. Install firewalld
+- name: sw-node-exporter | 2. Install firewalld
   ansible.builtin.apt:
     name:
     - firewalld
     state: present
     update_cache: yes
 
-- name: sw-node-exporter | PRE - 3. Start and enable firewalld service
+- name: sw-node-exporter | 3. Start and enable firewalld service
   ansible.builtin.systemd:
     state: started
     name: firewalld
     enabled: yes
     daemon_reload: yes
 
-- name: sw-node-exporter | PRE - 4. Allow SPOLECNY ports in firewalld
+- name: sw-node-exporter | 4. Allow SPOLECNY ports in firewalld
   ansible.posix.firewalld:
     port: "{{ item }}"
     permanent: yes
     state: enabled
-  notify: firewalld reload
   loop:
     - 9100/tcp
     - 22/tcp
+  notify: firewalld reload
 
-- name: sw-node-exporter | PRE - 4. Allow additional ports in firewalld
+- name: sw-node-exporter | 5. Allow additional ports in firewalld
   ansible.posix.firewalld:
     port: "{{ item }}"
     permanent: yes
     state: enabled
-  notify: reload firewalld
   with_items: "{{ additional_ports }}"
   when: additional_ports is defined
+  notify: firewalld reload
 
-- name: sw-node-exporter | 1. Download and Unarchive node-exporter in /usr/local/bin
+- name: sw-node-exporter | 6. Download the latest node-exporter distribution
+  ansible.builtin.get_url:
+    url: "{{ lookup('url', 'https://api.github.com/repos/prometheus/node_exporter/releases/latest', split_lines=false) | regex_search('browser_download_url.*(https://(.*?)linux-amd64.tar.gz)', '\\1') | first }}"
+    dest: /usr/local/bin/node-exporter-latest.tar.gz
+
+- name: sw-node-exporter | 7. Unarchive node-exporter in /usr/local/bin
   ansible.builtin.unarchive:
-    src: https://github.com/prometheus/node_exporter/releases/download/v1.4.0/node_exporter-1.4.0.linux-amd64.tar.gz
+    src: /usr/local/bin/node-exporter-latest.tar.gz
     dest: /usr/local/bin
     remote_src: yes
+    extra_opts: [--strip-components=1 ]
 
-- name: sw-node-exporter | 2. Create node_exporter group
+- name: sw-node-exporter | 8. Create node_exporter group
   ansible.builtin.group:
     name: node_exporter
     state: present
 
-- name: sw-node-exporter | 3. Add the user and group 'node_exporter' with no home and shell
+- name: sw-node-exporter | 9. Add the user and group 'node_exporter' with no home and shell
   ansible.builtin.user:
     name: node_exporter
     group: node_exporter
     create_home: no
     shell: /bin/false
 
-- name: sw-node-exporter | 4. Move node_exporter to /usr/local/bin
-  ansible.builtin.copy:
-    src: /usr/local/bin/node_exporter-1.4.0.linux-amd64/node_exporter
-    dest: /usr/local/bin
-    owner: node_exporter
-    group: node_exporter
-    mode: '0777'
-    remote_src: yes
-
-- name: sw-node-exporter | 5. Recursively remove node_exporter directory
+- name: sw-node-exporter | 10. Recursively remove node_exporter directory
   ansible.builtin.file:
-    path: /usr/local/bin/node_exporter-1.4.0.linux-amd64
+    path: /usr/local/bin/node-exporter-latest.tar.gz
     state: absent
 
-- name: sw-node-exporter | 6. Deploy node_exporter.service
+- name: sw-node-exporter | 11. Deploy node_exporter.service
   ansible.builtin.copy:
     src: node_exporter.service
     dest: /etc/systemd/system
   notify:
     - daemon reload
 
-- name: sw-node-exporter | 7. Start and enable node-exporter service
+- name: sw-node-exporter | 12. Start and enable node-exporter service
   ansible.builtin.service:
     name: node_exporter
     state: started
